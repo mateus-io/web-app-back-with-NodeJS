@@ -2,6 +2,8 @@ const Student = require('../models/Student');
 
 const ParseStringToArray = require('../utils/ParseStringToArray');
 const VerifyIfStudentIsPresent = require('../utils/VerifyIfStudentIsPresent');
+const { findConnections, sendMessage } = require('../../config/webSocket');
+
 
 const axios = require('axios');
 
@@ -9,7 +11,7 @@ module.exports = {
     add : {
         async byGitHub(req, res){
             const { github_username, courses, latitude, longitude } = req.body;
-            const coursesArray = ParseStringToArray(courses);
+            const coursesArray = ParseStringToArray(courses.toLowerCase());
             
             let student = await VerifyIfStudentIsPresent(github_username);//doing search on own database with goal find the user if to find don't add
             if(!student){
@@ -34,21 +36,29 @@ module.exports = {
                     course_of_preference: coursesArray,
                     location
                 });
+
+                const sendSocketMessageTo = findConnections(
+                    { latitude, longitude },
+                    coursesArray
+                );
+                console.log(sendSocketMessageTo);
+                sendMessage(sendSocketMessageTo, 'new-student', student);
             }
             return res.json(student);
         },
         bySimpleCredentials(req, res){
-            const { username, name, password } = req.body;
+            const { username, name, password, courses } = req.body;
+            const course_of_preference = ParseStringToArray(courses.toLowerCase());
             console.log(username);
             new Student({
                 studentID: "auto incrementar dps",
-                name: name,
-                username: username,
-                password: password,
+                name,
+                username,
+                password,
                 bio: "Insert a little text about you",
                 avatar_url: "none",
                 github_username: "none",
-                course_of_preference: []
+                course_of_preference
             }).save().then( (newStudent) => {
                 console.log("new Student created was : " + newStudent);
             });
@@ -76,7 +86,7 @@ module.exports = {
             const { name, bio, avatar_url, courses } = req.body;
             const student = await VerifyIfStudentIsPresent(username);
 
-            const course_of_preference = ParseStringToArray(courses);
+            const course_of_preference = ParseStringToArray(courses.toLowerCase());
 
             if(student){
                 await Student.updateOne( { username } ,{
