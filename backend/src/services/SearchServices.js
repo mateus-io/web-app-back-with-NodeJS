@@ -6,9 +6,23 @@ module.exports = {
     async searchStudents(req, res){
         
         const { latitude, longitude, courses } = req.query;
+        
+        const coursesArray = ParseStringToArray(courses.toLowerCase());
 
-        const coursesArray = ParseStringToArray(courses);
-
+        if(coursesArray[0] === ''){
+            const students = await Student.find({
+                location : {
+                    $near : {
+                        $geometry : {
+                            type : 'Point',
+                            coordinates : [longitude, latitude],
+                        },
+                        $maxDistance : 10000,
+                    },
+                },
+            });
+            return res.json(students);
+        }
         const students = await Student.find({
             course_of_preference : {
                 $in : coursesArray,
@@ -23,7 +37,6 @@ module.exports = {
                 },
             },
         });
-
         return res.json(students);
     }
 }

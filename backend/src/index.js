@@ -7,9 +7,15 @@ const passportSetup = require('../config/passport-setup');
 const cookieSession = require('cookie-session');
 const passport = require('passport');
 const cors = require('cors');
-require('dotenv').config();
+const bodyParser = require('body-parser');
+const { setupWebSocket } = require('../config/webSocket');
 
-const app = new express();
+const http = require('http');
+const app = express();
+const server = http.Server(app);
+setupWebSocket(server);
+
+require('../config/getEnv');
 
 app.set('view engine', 'ejs');
 
@@ -29,8 +35,10 @@ mongoose.connect(process.env.MONGO_DB_KEY, {
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.urlencoded({extended : false}));
+app.use(bodyParser.json());
 app.use(routes);
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
 
-app.listen(8383);
+server.listen(8383);
