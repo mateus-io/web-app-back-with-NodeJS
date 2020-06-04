@@ -35,8 +35,6 @@ mongoose.connect(process.env.MONGO_DB_KEY, {
 
 app.use(cors());
 app.use(express.json());
-app.use(bodyParser.urlencoded({extended : false}));
-app.use(bodyParser.json());
 app.use(routes);
 app.use('/auth', authRoutes);
 app.use('/profile', profileRoutes);
